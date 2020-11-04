@@ -99,6 +99,11 @@ uint8_t gBrt = 0;                                             // rotating "brigh
 typedef void (*SimplePatternList[])();                        // List of patterns to cycle through.  Each is defined as a separate function below.
 SimplePatternList gPatterns = {fadeall, snakey, colorbands, bouncingball, flashusa, flashfade, confetti, blipouts, rainbow, rainbowWithGlitter, bpm, white, cylon, landinglight, fireball, pulse, racer, juggle, bandcracker, bandcracker2};
 
+long amap(long x, long in_min, long in_max, long out_min, long out_max)
+{
+  return (x - in_min) * (out_max - out_min + 1) / (in_max - in_min + 1) + out_min;
+}
+
 
 void setup() {
   Serial.begin(115200);
@@ -178,29 +183,85 @@ void setup() {
 
   webServer.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
     request->send_P( 200, "text/html", tab_manual );
-    Serial.println("Sent /");
   });
-  webServer.on("/power", HTTP_GET, [](AsyncWebServerRequest *request) {
+
+  webServer.on("/power", HTTP_POST, [](AsyncWebServerRequest *request) {
+    Serial.print("Set Power: ");
+    Serial.print(request->argName(0));
+    Serial.print(" = ");
+    Serial.println(request->arg(request->argName(0)));
+    if(request->args() > 0) {
+      if(request->arg("value") == "0") {
+        Serial.println("Power OFF");
+        // fastled code to power off
+      } else {
+        Serial.println("Power ON");
+        // fastled code to power on
+      }
+    }
     request->send_P( 200, "text/html", "" );
   });
-  webServer.on("/palette", HTTP_GET, [](AsyncWebServerRequest *request) {
+
+  webServer.on("/palette", HTTP_POST, [](AsyncWebServerRequest *request) {
+    if(request->args() > 0) {
+      Serial.print("Set Color: ");
+      Serial.println(request->arg("value"));
+
+      int r, g, b;
+      sscanf(request->arg("value").c_str(), "%02x%02x%02x", &r, &g, &b);
+      // fastled code to set color using r, g, b
+    }
     request->send_P( 200, "text/html", "" );
   });
-  webServer.on("/brightness", HTTP_GET, [](AsyncWebServerRequest *request) {
+
+  webServer.on("/brightness", HTTP_POST, [](AsyncWebServerRequest *request) {
+    if(request->args() > 0) {
+      //Serial.println(request->argName(0));
+      Serial.print("Set Brightness: ");
+      Serial.print(request->arg("value"));
+      Serial.print(" [");
+      Serial.print(amap(request->arg("value").toInt(), 0, 100, 0, 255));
+      Serial.println("]");
+      FastLED.setBrightness(amap(request->arg("value").toInt(), 0, 100, 0, 255));
+    }
     request->send_P( 200, "text/html", "" );
   });
-  webServer.on("/program", HTTP_GET, [](AsyncWebServerRequest *request) {
+
+  webServer.on("/program", HTTP_POST, [](AsyncWebServerRequest *request) {
+    if(request->args() > 0) {
+      Serial.print("Set Program: ");
+      Serial.println(request->arg("value"));
+
+      gCurrentPatternNumber = request->arg("value").toInt();
+    }
     request->send_P( 200, "text/html", "" );
   });
-  webServer.on("/speed", HTTP_GET, [](AsyncWebServerRequest *request) {
+
+  webServer.on("/speed", HTTP_POST, [](AsyncWebServerRequest *request) {
+    if(request->args() > 0) {
+      Serial.print("Set Speed: ");
+      Serial.println(request->arg("value"));
+    }
     request->send_P( 200, "text/html", "" );
   });
-  webServer.on("/value", HTTP_GET, [](AsyncWebServerRequest *request) {
+
+  webServer.on("/value", HTTP_POST, [](AsyncWebServerRequest *request) {
+    if(request->args() > 0) {
+      Serial.print("Set Value: ");
+      Serial.println(request->arg("value"));
+    }
     request->send_P( 200, "text/html", "" );
   });
+
+  webServer.on("/favicon.ico", HTTP_GET, [](AsyncWebServerRequest *request){
+    request->send_P( 200, "text/html", "");
+    Serial.println("favicon.ico requested");
+  });
+
   webServer.onNotFound([](AsyncWebServerRequest *request){
     request->send(404);
   });
+
   webServer.begin();
 }
 
