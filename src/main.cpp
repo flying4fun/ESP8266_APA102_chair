@@ -177,7 +177,8 @@ void setup() {
 
 
   webServer.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
-    request->send( 200, "text/html", tab_manual );
+    //request->send( 200, "text/html", tab_manual );
+    request->send_P( 200, "text/html", tab_manual );
     Serial.println("Sent /");
   });
   webServer.on("/power", HTTP_GET, [](AsyncWebServerRequest *request) {
@@ -198,11 +199,14 @@ void setup() {
   webServer.on("/value", HTTP_GET, [](AsyncWebServerRequest *request) {
     request->send_P( 200, "text/html", "" );
   });
+  webServer.onNotFound([](AsyncWebServerRequest *request){
+    request->send(404);
+  });
   webServer.begin();
 }
 
 void loop() {
-  //readbutton();
+  readbutton();
   ArduinoOTA.handle();                      // Listen for OTA requests
 
   gPatterns[gCurrentPatternNumber]();                       // Call the current pattern function once, updating the 'leds' array
