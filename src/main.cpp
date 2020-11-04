@@ -14,9 +14,9 @@
 #include "html_strings.h"
 
 #include "EEPROM.h"
-//#define FASTLED_ALL_PINS_HARDWARE_SPI
-//#define ESP8266_SPI
-#define FASTLED_ESP8266_RAW_PIN_ORDER
+#define FASTLED_ALL_PINS_HARDWARE_SPI
+#define ESP8266_SPI
+//#define FASTLED_ESP8266_RAW_PIN_ORDER
 #include "FastLED.h"
 
 #define buttonPin 0                                           // input pin to use as a digital input
@@ -170,16 +170,15 @@ void setup() {
     else if (error == OTA_END_ERROR) Serial.println("End Failed");
   });
   ArduinoOTA.begin();
+  Serial.println("Setup of OTA complete");
   Serial.println("Ready");
   Serial.print("IP address: ");
   Serial.println(WiFi.localIP());
 
 
   webServer.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
-    char *buf;
-    unsigned int buflen = sizeof(tab_manual);
-    tab_manual.toCharArray(buf, buflen);
-    request->send_P( 200, "text/html", buf );
+    request->send( 200, "text/html", tab_manual );
+    Serial.println("Sent /");
   });
   webServer.on("/power", HTTP_GET, [](AsyncWebServerRequest *request) {
     request->send_P( 200, "text/html", "" );
@@ -199,10 +198,13 @@ void setup() {
   webServer.on("/value", HTTP_GET, [](AsyncWebServerRequest *request) {
     request->send_P( 200, "text/html", "" );
   });
+  webServer.begin();
 }
 
 void loop() {
-  readbutton();
+  //readbutton();
+  ArduinoOTA.handle();                      // Listen for OTA requests
+
   gPatterns[gCurrentPatternNumber]();                       // Call the current pattern function once, updating the 'leds' array
   FastLED.show();
 }
