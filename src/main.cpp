@@ -56,6 +56,7 @@ void bandcracker(void);
 void bandcracker2(void);
 void police(void);
 void burstfade(void);
+void dropsslide(void);
 void readbutton();
 
 MDNSResponder mdns;
@@ -70,6 +71,11 @@ int eepaddress = 0;
 // Global variables can be changed on the fly.
 uint8_t max_bright = 255;                                     // Overall brightness definition. It can be changed on the fly.
 uint8_t speed;
+uint8_t dropSize = NUM_LEDS/8;
+uint8_t eyeSize = NUM_LEDS/2;
+uint8_t tR;
+uint8_t tG;
+uint8_t tB;
 
 int16_t movingled = 0;                                       // variables for moving up and down the LED chain
 int16_t movingledA = 0;
@@ -78,6 +84,8 @@ int16_t movingledC = 0;
 int16_t movingledD = 0;
 int16_t movingledE = 0;
 int16_t movingledF = 0;
+uint16_t locationA = 0;
+uint16_t locationB = 0;
 
 byte mode = 0;
 
@@ -106,7 +114,7 @@ byte colorB = 0;
 byte pulseA = 0;
 
 typedef void (*SimplePatternList[])();                        // List of patterns to cycle through.  Each is defined as a separate function below.
-SimplePatternList gPatterns = {fadeall, snakey, colorbands, bouncingball, flashusa, flashfade, confetti, blipouts, rainbow, rainbowWithGlitter, bpm, white, cylon, landinglight, fireball, pulse, racer, juggle, bandcracker, bandcracker2, police, burstfade };
+SimplePatternList gPatterns = {fadeall, snakey, colorbands, bouncingball, flashusa, flashfade, confetti, blipouts, rainbow, rainbowWithGlitter, bpm, white, cylon, landinglight, fireball, pulse, racer, juggle, bandcracker, bandcracker2, police, burstfade, dropsslide };
 
 long amap(long x, long in_min, long in_max, long out_min, long out_max)
 {
@@ -1110,5 +1118,134 @@ void burstfade(void) {
       //strip.setPixelColor(k, gamma8[colorG], gamma8[colorR], gamma8[colorB]);
       leds[k] = CRGB(colorR, colorG, colorB);
     }
+  }
+}
+
+void dropsfade(void) {
+  // Drops Fade
+  EVERY_N_MILLISECONDS(10) {
+    fadeToBlackBy(leds, NUM_LEDS, 15);
+  }
+  EVERY_N_MILLISECONDS(600 - (NUM_LEDS*2)) {
+    locationA = random(NUM_LEDS-1);
+    leds[locationA] = CRGB(colorR, colorB, colorG);
+    tR = colorR;
+    tG = colorG;
+    tB = colorB;
+    for(int k = locationA+1; k < (locationA+1)+(dropSize/2); k++) {
+      if( k < NUM_LEDS ) {
+        tR -= (colorR/(dropSize/2));
+        tG -= (colorG/(dropSize/2));
+        tB -= (colorB/(dropSize/2));
+        leds[k] = CRGB(tR, tG, tB);
+      }
+    }
+    tR = colorR;
+    tG = colorG;
+    tB = colorB;
+    for(int k = locationA-1; k > (locationA-1)-(dropSize/2); k--) {
+      if( k >= 0 ) {
+        tR -= (colorR/(dropSize/2));
+        tG -= (colorG/(dropSize/2));
+        tB -= (colorB/(dropSize/2));
+        leds[k] = CRGB(tR, tG, tB);
+      }
+    }
+  }
+}
+
+void dropsslide(void) {
+  // Drops Slide
+  EVERY_N_MILLISECONDS(10) { //constant fadeout
+    fadeToBlackBy(leds, NUM_LEDS, 10);
+  }
+  if( bounceA ) {  // write new drop only when old drop is gone
+    locationA = random(NUM_LEDS-1);
+    leds[locationA] = CRGB(colorR, colorG, colorB);
+    tR = colorR;
+    tG = colorG;
+    tB = colorB;
+    for(int k = locationA+1; k < (locationA+1)+(dropSize/2); k++) {
+      if( k < NUM_LEDS ) {
+        tR -= (colorR/(dropSize/2));
+        tG -= (colorG/(dropSize/2));
+        tB -= (colorB/(dropSize/2));
+        leds[k] = CRGB(tR, tG, tB);
+      }
+    }
+    tR = colorR;
+    tG = colorG;
+    tB = colorB;
+    for(int k = locationA-1; k > (locationA-1)-(dropSize/2); k--) {
+      if( k >= 0 ) {
+        tR -= (colorR/(dropSize/2));
+        tG -= (colorG/(dropSize/2));
+        tB -= (colorB/(dropSize/2));
+        leds[k] = CRGB(tR, tG, tB);
+      }
+    }
+    bounceA = 0;
+  }
+  if( bounceB ) {  // write new drop only when old drop is gone
+    locationB = random(NUM_LEDS-1);
+    leds[locationB] = CRGB(colorR, colorG, colorB);
+    tR = colorR;
+    tG = colorG;
+    tB = colorB;
+    for(int k = locationB+1; k < (locationB+1)+(dropSize/2); k++) {
+      if( k < NUM_LEDS ) {
+        tR -= (colorR/(dropSize/2));
+        tG -= (colorG/(dropSize/2));
+        tB -= (colorB/(dropSize/2));
+        leds[k] = CRGB(tR, tG, tB);
+      }
+    }
+    tR = colorR;
+    tG = colorG;
+    tB = colorB;
+    for(int k = locationB-1; k > (locationB-1)-(dropSize/2); k--) {
+      if( k >= 0 ) {
+        tR -= (colorR/(dropSize/2));
+        tG -= (colorG/(dropSize/2));
+        tB -= (colorB/(dropSize/2));
+        leds[k] = CRGB(tR, tG, tB);
+      }
+    }
+    bounceB = 0;
+  }
+  //if (timerA < (millis() - (50+((NUMPIXELS/2)/((NUMPIXELS/2) > locationA ? (NUMPIXELS/2) - locationA : locationA - (NUMPIXELS/2)))))){ //slide faster when further to the edges - this doesn't work well and crashes sometimes
+  EVERY_N_MILLISECONDS(50) {
+    if (locationA > (NUM_LEDS/2)) { //which direction to slide
+      if (locationA < NUM_LEDS){
+        locationA++;
+      }
+      if (locationA == NUM_LEDS){
+        bounceA = 1;
+      }
+    } else {
+      if (locationA > 0){
+        locationA--;
+      }
+      if (locationA == 0){
+        bounceA = 1;
+      }
+    }
+    if (locationB > (NUM_LEDS/2)) { //which direction to slide
+      if (locationB < NUM_LEDS){
+        locationB++;
+      }
+      if (locationB == NUM_LEDS){
+        bounceB = 1;
+      }
+    } else {
+      if (locationB > 0){
+        locationB--;
+      }
+      if (locationB == 0){
+        bounceB = 1;
+      }
+    }
+    leds[locationA] = CRGB(colorR, colorG, colorB);
+    leds[locationB] = CRGB(colorR, colorG, colorB);
   }
 }
