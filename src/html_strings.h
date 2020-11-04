@@ -1,52 +1,5 @@
 #include <WString.h>
 
-String nav_main = "\
-<!DOCTYPE html>\
-<html>\
-\
-<head>\
-  <meta charset=\"utf-8\">\
-    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\
-  <title>RGB LED Night Light</title>\
-  <link rel=\"stylesheet\" href=\"https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css\"\
-   integrity=\"sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u\" crossorigin=\"anonymous\">\
-  <style id=\"jsbin-css\">\
-  body {\
-    padding-top: 50px;\
-  }\
-  .body_container {\
-    padding: 20px 15px;\
-  }\
-  </style>\
-</head>\
-\
-<body style=\"background: #EFEFEF;\">\
-  <nav class=\"navbar navbar-inverse navbar-fixed-top\">\
-    <div class=\"container-fluid\">\
-      <div class=\"navbar-header\">\
-        <a class=\"navbar-brand\" href=\"#\">Settings</a>\
-      </div>\
-      <ul class=\"nav navbar-nav\">\
-        <li class=\"active\">\
-          <a class=\"nav navbar-nav\" href=\"tab_manual.html\">Manual</a>\
-        </li>\
-        <li>\
-          <a class=\"nav navbar-nav\" href=\"#\">Alarms</a>\
-        </li>\
-      </ul>\
-    </div>\
-  </nav>\
-  <script src=\"https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js\"></script>\
-  <script>window.jQuery || document.write('<script src=\"../../assets/js/vendor/jquery.min.js\"><\\/script>')</script>\
-  <script src=\"https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js\"\
-   integrity=\"sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa\"\
-   crossorigin=\"anonymous\"></script>\
-  <script type=\"text/javascript\">\
-  </script>\
-</body>\
-</html>\
-\r\n";
-
 const char tab_manual[] PROGMEM = "\
 <!DOCTYPE html>\
 <html>\
@@ -62,27 +15,13 @@ const char tab_manual[] PROGMEM = "\
     padding-top: 50px;\
   }\
   .body_container {\
+    color: grey;\
     padding: 20px 15px;\
   }\
   </style>\
 </head>\
 \
-<body style=\"background: #EFEFEF;\">\
-  <nav class=\"navbar navbar-inverse navbar-fixed-top\">\
-    <div class=\"container-fluid\">\
-      <div class=\"navbar-header\">\
-        <a class=\"navbar-brand\" href=\"#\">Settings</a>\
-      </div>\
-      <ul class=\"nav navbar-nav\">\
-        <li class=\"active\">\
-          <a class=\"nav navbar-nav\" href=\"tab_manual.html\">Manual</a>\
-        </li>\
-        <li>\
-          <a class=\"nav navbar-nav\" href=\"#\">Alarms</a>\
-        </li>\
-      </ul>\
-    </div>\
-  </nav>\
+<body style=\"background: #000000;\">\
   <form class=\"form-horizontal body_container\">\
     <div class=\"form-group\">\
       <label for=\"inputPower\" class=\"col-xs-2 control-label\">Power</label>\
@@ -97,37 +36,32 @@ const char tab_manual[] PROGMEM = "\
         </div>\
       </div>\
     </div>\
-    <div class=\"form-group\">\
-     <label for=\"outputClock\" class=\"col-xs-2 control-label\">Clock</label>\
-       <div class=\"col-xs-9\">\
-        <div class=\"input-group\">\
-             <p id=\"idclock\" class=\"form-control-static\">00:00</p>\
-        </div>\
-       </div>\
-    </div>\
      <div class=\"form-group\">\
        <label for=\"inputProgram\" class=\"col-xs-2 control-label\">Program</label>\
        <div class=\"col-xs-9\">\
          <select class=\"form-control\" id=\"inputProgram\">\
-           <option value=\"0\">None</option>\
-           <option value=\"1\">Color Cycle</option>\
-           <option value=\"2\">Rainbow Chase</option>\
-           <option value=\"3\">Pulse</option>\
-           <option value=\"4\">Strobe</option>\
-           <option value=\"5\">Orbit</option>\
-           <option value=\"6\">Chase</option>\
-           <option value=\"7\">Comet</option>\
-           <option value=\"8\">Double</option>\
-           <option value=\"9\">Cylon</option>\
-           <option value=\"10\">Police</option>\
-           <option value=\"11\">Adjustable Orbit</option>\
-           <option value=\"12\">Twinkle</option>\
-           <option value=\"13\">Random Color Twinkle</option>\
-           <option value=\"14\">Sparkle</option>\
-           <option value=\"15\">Snow Sparkle</option>\
-           <option value=\"16\">Running Lights</option>\
-           <option value=\"17\">Circular Progress</option>\
-           <option value=\"18\">Rising Level</option>\
+           <option value=\"0\">Fade All</option>\
+           <option value=\"1\">Snakey</option>\
+           <option value=\"2\">Color Bands</option>\
+           <option value=\"3\">Bouncing Ball</option>\
+           <option value=\"4\">Flash USA</option>\
+           <option value=\"5\">Flash Fade</option>\
+           <option value=\"6\">Confetti</option>\
+           <option value=\"7\">Blip-outs</option>\
+           <option value=\"8\">Rainbow</option>\
+           <option value=\"9\">Rainbow with Glitter</option>\
+           <option value=\"10\">BPM</option>\
+           <option value=\"11\">White</option>\
+           <option value=\"12\">Cylon</option>\
+           <option value=\"13\">Landing Light</option>\
+           <option value=\"14\">Fireball</option>\
+           <option value=\"15\">Pulse</option>\
+           <option value=\"16\">Racer</option>\
+           <option value=\"17\">Juggle</option>\
+           <option value=\"18\">Bandcracker</option>\
+           <option value=\"19\">Bandcracker 2</option>\
+           <option value=\"20\">Police</option>\
+           <option value=\"21\">Burst Fade</option>\
          </select>\
        </div>\
      </div>\
@@ -154,7 +88,7 @@ const char tab_manual[] PROGMEM = "\
      <div class=\"col-xs-9\">\
        <div class=\"input-group\">\
          <span class=\"input-group-addon\" id=\"spanSpeed\">50</span>\
-         <input class=\"form-control\" id=\"inputSpeed\" type=\"range\" step=\"1\" min=\"0\" max=\"100\" />\
+         <input class=\"form-control\" id=\"inputSpeed\" type=\"range\" step=\"10\" min=\"0\" max=\"100\" />\
        </div>\
      </div>\
    </div>\

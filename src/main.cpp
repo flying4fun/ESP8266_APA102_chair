@@ -54,6 +54,8 @@ void racer(void);
 void juggle(void);
 void bandcracker(void);
 void bandcracker2(void);
+void police(void);
+void burstfade(void);
 void readbutton();
 
 MDNSResponder mdns;
@@ -67,6 +69,7 @@ int eepaddress = 0;
 
 // Global variables can be changed on the fly.
 uint8_t max_bright = 255;                                     // Overall brightness definition. It can be changed on the fly.
+uint8_t speed;
 
 int16_t movingled = 0;                                       // variables for moving up and down the LED chain
 int16_t movingledA = 0;
@@ -80,7 +83,6 @@ byte mode = 0;
 
 bool bBounce = 0;
 bool bWipe = 0;
-
 bool bLed = 0;
 bool bLedA = 0;
 bool bLedB = 0;
@@ -88,6 +90,8 @@ bool bLedC = 0;
 bool bLedD = 0;
 bool bLedE = 0;
 bool policeCar = 0;
+bool bounceA = 0;
+bool bounceB = 0;
 
 struct CRGB leds[NUM_LEDS];                                   // Initialize our LED array.
 
@@ -96,8 +100,13 @@ uint8_t gHue = 0;                                             // rotating "base 
 uint8_t gSat = 0;                                             // rotating "saturation value"
 uint8_t gBrt = 0;                                             // rotating "brightness value"
 
+byte colorR = 0;
+byte colorG = 0;
+byte colorB = 0;
+byte pulseA = 0;
+
 typedef void (*SimplePatternList[])();                        // List of patterns to cycle through.  Each is defined as a separate function below.
-SimplePatternList gPatterns = {fadeall, snakey, colorbands, bouncingball, flashusa, flashfade, confetti, blipouts, rainbow, rainbowWithGlitter, bpm, white, cylon, landinglight, fireball, pulse, racer, juggle, bandcracker, bandcracker2};
+SimplePatternList gPatterns = {fadeall, snakey, colorbands, bouncingball, flashusa, flashfade, confetti, blipouts, rainbow, rainbowWithGlitter, bpm, white, cylon, landinglight, fireball, pulse, racer, juggle, bandcracker, bandcracker2, police, burstfade };
 
 long amap(long x, long in_min, long in_max, long out_min, long out_max)
 {
@@ -209,7 +218,13 @@ void setup() {
 
       int r, g, b;
       sscanf(request->arg("value").c_str(), "%02x%02x%02x", &r, &g, &b);
+      colorR = r;
+      colorG = g;
+      colorB = b;
       // fastled code to set color using r, g, b
+      //for (uint16_t i = 0; i <= NUM_LEDS; i++) {
+      //  leds[i] = CRGB(r, g, b);
+      //}
     }
     request->send_P( 200, "text/html", "" );
   });
@@ -935,7 +950,10 @@ void racer(void) {
         policeCar = !policeCar;
       }
     }
-    movingled += (NUM_LEDS/60);
+    EVERY_N_MILLISECONDS(5) {
+      movingled++;
+    }
+    //movingled += (NUM_LEDS/60);
     movingledF = (((movingled) / 2) - (whiteBarLength + (NUM_LEDS / 10))) ;
   }
 
@@ -1015,5 +1033,82 @@ void bandcracker2() {
   for (int i = 0; i < NUM_LEDS; i++) {
     leds[i].nscale8(random8(125, 250));
     leds[i] += leds[i].nscale8(random8(105, 244));
+  }
+}
+
+void police(void) {
+  EVERY_N_MILLISECONDS(60) {
+    if( pulseA > 11){
+      pulseA = 0;
+    }
+    if( pulseA < 6 ){
+      if ( bounceA ){
+        black();
+        bounceA = !bounceA;
+      } else {
+        for(int k=0; k < (NUM_LEDS/2); k++) {
+          leds[k] = CRGB(255, 0, 0);
+        }
+        bounceA = !bounceA;
+      }
+    } else {
+      if ( bounceA ){
+        black();
+        bounceA = !bounceA;
+      } else {
+        for(int k=(NUM_LEDS/2); k < NUM_LEDS; k++) {
+          leds[k] = CRGB(0, 0, 255);
+        }
+        bounceA = !bounceA;
+      }
+    }
+    pulseA++;
+  }
+}
+
+/*
+void lightning(void) {
+  //Lightning
+  if ( tempPattern == 0 ){ //initialization setup
+    strip.setBrightness(50);
+    timerA = 0;
+    memoryB = memoryA;  //pass the previous program memory out of the loop for future use.
+    pulseA = 0;
+    bounceA = 0;
+    tempPattern = 1;  //lightning mode is temporarily active
+  }
+  if ( pulseA < 6 ){
+    if ( timerA < (millis() - 60 )) {
+      if ( bounceA ){
+        black();
+        bounceA = !bounceA;
+      } else {
+        for(int k=0; k < (NUMPIXELS); k++) {
+          strip.setPixelColor(k, 255, 255, 255);
+        }
+        bounceA = !bounceA;
+        pulseA++;
+      }
+      timerA = millis();
+    }
+    strip.show();
+  } else {
+    strip.setBrightness(brightness);
+    programMode = memoryB;
+    tempPattern = 0;
+  }
+}
+*/
+
+void burstfade(void) {
+  // Burst Fade
+  EVERY_N_MILLISECONDS(10) {
+    fadeToBlackBy(leds, NUM_LEDS, 10);
+  }
+  EVERY_N_MILLISECONDS(2200) {
+    for(int k=0; k < NUM_LEDS; k++) {
+      //strip.setPixelColor(k, gamma8[colorG], gamma8[colorR], gamma8[colorB]);
+      leds[k] = CRGB(colorR, colorG, colorB);
+    }
   }
 }
