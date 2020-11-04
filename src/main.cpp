@@ -177,7 +177,6 @@ void setup() {
 
 
   webServer.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
-    //request->send( 200, "text/html", tab_manual );
     request->send_P( 200, "text/html", tab_manual );
     Serial.println("Sent /");
   });

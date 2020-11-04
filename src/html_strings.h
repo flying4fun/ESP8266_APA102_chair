@@ -47,7 +47,7 @@ String nav_main = "\
 </html>\
 \r\n";
 
-const char  tab_manual[] PROGMEM = "\
+const char tab_manual[] PROGMEM = "\
 <!DOCTYPE html>\
 <html>\
 \
