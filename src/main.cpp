@@ -70,12 +70,19 @@ int eepaddress = 0;
 
 // Global variables can be changed on the fly.
 uint8_t max_bright = 255;                                     // Overall brightness definition. It can be changed on the fly.
-uint8_t speed;
+uint8_t speed = 50;
 uint8_t dropSize = NUM_LEDS/8;
 uint8_t eyeSize = NUM_LEDS/2;
 uint8_t tR;
 uint8_t tG;
 uint8_t tB;
+uint8_t gCurrentPatternNumber = 0;                            // Index number of which pattern is current
+uint8_t gHue = 0;                                             // rotating "base color" used by many of the patterns
+uint8_t gSat = 0;                                             // rotating "saturation value"
+uint8_t gBrt = 0;                                             // rotating "brightness value"
+uint8_t colorR = 0;
+uint8_t colorG = 0;
+uint8_t colorB = 0;
 
 int16_t movingled = 0;                                       // variables for moving up and down the LED chain
 int16_t movingledA = 0;
@@ -84,8 +91,12 @@ int16_t movingledC = 0;
 int16_t movingledD = 0;
 int16_t movingledE = 0;
 int16_t movingledF = 0;
+
 uint16_t locationA = 0;
 uint16_t locationB = 0;
+
+long timerA = 0;
+long timerB = 0;
 
 byte mode = 0;
 
@@ -103,14 +114,6 @@ bool bounceB = 0;
 
 struct CRGB leds[NUM_LEDS];                                   // Initialize our LED array.
 
-uint8_t gCurrentPatternNumber = 0;                            // Index number of which pattern is current
-uint8_t gHue = 0;                                             // rotating "base color" used by many of the patterns
-uint8_t gSat = 0;                                             // rotating "saturation value"
-uint8_t gBrt = 0;                                             // rotating "brightness value"
-
-byte colorR = 0;
-byte colorG = 0;
-byte colorB = 0;
 byte pulseA = 0;
 
 typedef void (*SimplePatternList[])();                        // List of patterns to cycle through.  Each is defined as a separate function below.
@@ -126,6 +129,7 @@ void setup() {
   Serial.begin(115200);
   pinMode(buttonPin, INPUT);                                  // Set button input pin
   digitalWrite(buttonPin, HIGH );
+  randomSeed(analogRead(0));
 
   Serial.println("Booting");
   Serial.println("Free Heap: " + String(ESP.getFreeHeap()));
@@ -151,7 +155,7 @@ void setup() {
   Serial.print("Starting ledMode: ");
   Serial.println(gCurrentPatternNumber);
 
-  gCurrentPatternNumber = 16;
+  //gCurrentPatternNumber = 16;
 
 
   // Port defaults to 8266
@@ -264,6 +268,8 @@ void setup() {
     if(request->args() > 0) {
       Serial.print("Set Speed: ");
       Serial.println(request->arg("value"));
+
+      speed = request->arg("value").toInt();
     }
     request->send_P( 200, "text/html", "" );
   });
@@ -603,7 +609,8 @@ void fireball() {
     if (movingled > 0) {
       leds[movingled - 1].nscale8(80);
     }
-    j+random8(5);
+    //j+random8(5);
+    j=random8(5);
     if ((random8() < i) && ((movingled - j) >= 0)) {
       movingledB = (movingled - j);
       leds[ movingledB ] = CRGB::Tan;
@@ -620,7 +627,8 @@ void fireball() {
     if (movingled < (NUM_LEDS - 1)) {
       leds[movingled + 1].nscale8(80);
     }
-    j+random8(5);
+    //j+random8(5);
+    j=random8(5);
     if ((random8() < i) && ((movingled + j) < NUM_LEDS)) {
       movingledB = (movingled + j);
       leds[ movingledB ] = CRGB::Tan;
@@ -649,12 +657,14 @@ void juggle() {                                               // Eight colored d
 
 void cylon() {
   uint8_t eyeSize = NUM_LEDS / 5;
-  uint8_t tempBrt;
-  gHue = 0;
-  gSat = 255;
-  gBrt = 255;
-  tempBrt = gBrt;
+  //uint8_t tempBrt;
+  //gHue = 0;
+  //gSat = 255;
+  //gBrt = 255;
+  //tempBrt = gBrt;
 
+  //EVERY_N_MILLISECONDS(speed) {
+  /*
   if ( bBounce == 0 ) {
     if((NUM_LEDS/50) > 1)
       movingled += (NUM_LEDS/50);
@@ -692,12 +702,56 @@ void cylon() {
       leds[i] = CHSV(gHue, gSat, tempBrt);
     }
   }
+  */
+  EVERY_N_MILLISECONDS(speed) {
+
+    if( bounceA ) {
+      locationA++;
+      if( locationA >= (NUM_LEDS - 1) ) {
+        bounceA = !bounceA;
+      }
+    } else {
+      if( locationA > 0 ) {
+        locationA--;
+      }
+      if( locationA == 0 ) {
+        bounceA = !bounceA;
+      }
+    }
+
+    black();
+    leds[locationA] = CRGB(colorR, colorG, colorB);
+
+    tR = colorR;
+    tG = colorG;
+    tB = colorB;
+    for(int k = locationA+1; k < (locationA+1)+(eyeSize/2); k++) {
+      if( k < NUM_LEDS ) {
+        tR -= (colorR/(eyeSize/2));
+        tG -= (colorG/(eyeSize/2));
+        tB -= (colorB/(eyeSize/2));
+        leds[k] = CRGB(tR, tG, tB);
+      }
+    }
+    tR = colorR;
+    tG = colorG;
+    tB = colorB;
+    for(int k = locationA-1; k > (locationA-1)-(eyeSize/2); k--) {
+      if( k >= 0 ) {
+        tR -= (colorR/(eyeSize/2));
+        tG -= (colorG/(eyeSize/2));
+        tB -= (colorB/(eyeSize/2));
+        leds[k] = CRGB(tR, tG, tB);
+      }
+    }
+  }
 } // cylon
 
 
 
 void landinglight() {
-  uint8_t numStrobes = 30;                                      // how many strobes do you want?
+  //uint8_t numStrobes = 30;                                      // how many strobes do you want?
+  uint8_t numStrobes = NUM_LEDS;                                      // how many strobes do you want?
   uint8_t spacing = (NUM_LEDS/numStrobes);
   if (spacing < 1) {
     spacing = 1;
@@ -1156,12 +1210,14 @@ void dropsfade(void) {
 
 void dropsslide(void) {
   // Drops Slide
+  //if( timerB < (millis() - 10)) { //constant fadeout
   EVERY_N_MILLISECONDS(10) { //constant fadeout
-    fadeToBlackBy(leds, NUM_LEDS, 10);
+    fadeToBlackBy(leds, NUM_LEDS, 20);
+    timerB = millis();
   }
   if( bounceA ) {  // write new drop only when old drop is gone
-    locationA = random(NUM_LEDS-1);
-    leds[locationA] = CRGB(colorR, colorG, colorB);
+    locationA = random16(1, NUM_LEDS-2);
+    //leds[locationA] = CRGB(colorR, colorG, colorB);
     tR = colorR;
     tG = colorG;
     tB = colorB;
@@ -1184,11 +1240,11 @@ void dropsslide(void) {
         leds[k] = CRGB(tR, tG, tB);
       }
     }
-    bounceA = 0;
+    bounceA = false;
   }
   if( bounceB ) {  // write new drop only when old drop is gone
-    locationB = random(NUM_LEDS-1);
-    leds[locationB] = CRGB(colorR, colorG, colorB);
+    locationB = random16(1, NUM_LEDS-2);
+    //leds[locationB] = CRGB(colorR, colorG, colorB);
     tR = colorR;
     tG = colorG;
     tB = colorB;
@@ -1211,41 +1267,47 @@ void dropsslide(void) {
         leds[k] = CRGB(tR, tG, tB);
       }
     }
-    bounceB = 0;
+    bounceB = false;
   }
   //if (timerA < (millis() - (50+((NUMPIXELS/2)/((NUMPIXELS/2) > locationA ? (NUMPIXELS/2) - locationA : locationA - (NUMPIXELS/2)))))){ //slide faster when further to the edges - this doesn't work well and crashes sometimes
-  EVERY_N_MILLISECONDS(50) {
+  EVERY_N_MILLISECONDS(25) {
+  //if(timerA < (millis() - 20)) {
     if (locationA > (NUM_LEDS/2)) { //which direction to slide
-      if (locationA < NUM_LEDS){
+      if (locationA < NUM_LEDS) {
         locationA++;
       }
-      if (locationA == NUM_LEDS){
-        bounceA = 1;
+      if (locationA == NUM_LEDS) {
+        bounceA = true;
       }
     } else {
-      if (locationA > 0){
+      if (locationA > 0) {
         locationA--;
       }
-      if (locationA == 0){
-        bounceA = 1;
+      if (locationA == 0) {
+        bounceA = true;
       }
     }
     if (locationB > (NUM_LEDS/2)) { //which direction to slide
-      if (locationB < NUM_LEDS){
+      if (locationB < NUM_LEDS) {
         locationB++;
       }
-      if (locationB == NUM_LEDS){
-        bounceB = 1;
+      if (locationB == NUM_LEDS) {
+        bounceB = true;
       }
     } else {
-      if (locationB > 0){
+      if (locationB > 0) {
         locationB--;
       }
-      if (locationB == 0){
-        bounceB = 1;
+      if (locationB == 0) {
+        bounceB = true;
       }
     }
-    leds[locationA] = CRGB(colorR, colorG, colorB);
-    leds[locationB] = CRGB(colorR, colorG, colorB);
+    if( locationA  < NUM_LEDS && locationA >= 0) {
+      leds[locationA] = CRGB(colorR, colorG, colorB);
+    }
+    if( locationB  < NUM_LEDS && locationB >= 0) {
+      leds[locationB] = CRGB(colorR, colorG, colorB);
+    }
+    timerA = millis();
   }
 }
