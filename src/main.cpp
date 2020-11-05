@@ -57,13 +57,33 @@ void bandcracker2(void);
 void police(void);
 void burstfade(void);
 void dropsslide(void);
-void Fire2012WithPalette();
+void Fire2012WithPalette(void);
+void risingwater(void);
+void fallingwater(void);
 void readbutton();
 
 MDNSResponder mdns;
 DNSServer dnsServer;
 AsyncWebServer webServer(80);
 AsyncWiFiManager wifiManager(&webServer, &dnsServer);
+
+const uint8_t gamma8[] = {
+    0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+    0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  1,  1,  1,  1,
+    1,  1,  1,  1,  1,  1,  1,  1,  1,  2,  2,  2,  2,  2,  2,  2,
+    2,  3,  3,  3,  3,  3,  3,  3,  4,  4,  4,  4,  4,  5,  5,  5,
+    5,  6,  6,  6,  6,  7,  7,  7,  7,  8,  8,  8,  9,  9,  9, 10,
+   10, 10, 11, 11, 11, 12, 12, 13, 13, 13, 14, 14, 15, 15, 16, 16,
+   17, 17, 18, 18, 19, 19, 20, 20, 21, 21, 22, 22, 23, 24, 24, 25,
+   25, 26, 27, 27, 28, 29, 29, 30, 31, 32, 32, 33, 34, 35, 35, 36,
+   37, 38, 39, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 50,
+   51, 52, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 66, 67, 68,
+   69, 70, 72, 73, 74, 75, 77, 78, 79, 81, 82, 83, 85, 86, 87, 89,
+   90, 92, 93, 95, 96, 98, 99,101,102,104,105,107,109,110,112,114,
+  115,117,119,120,122,124,126,127,129,131,133,135,137,138,140,142,
+  144,146,148,150,152,154,156,158,160,162,164,167,169,171,173,175,
+  177,180,182,184,186,189,191,193,196,198,200,203,205,208,210,213,
+  215,218,220,223,225,228,231,233,236,239,241,244,247,249,252,255 };
 
 //Mode and EEPROM variables
 uint8_t maxMode = 20;                                          // Maximum number of display modes. Would prefer to get this another way, but whatever.
@@ -96,8 +116,8 @@ int16_t movingledF = 0;
 uint16_t locationA = 0;
 uint16_t locationB = 0;
 
-long timerA = 0;
-long timerB = 0;
+uint32_t timerA = 0;
+uint32_t timerB = 0;
 
 byte mode = 0;
 
@@ -112,6 +132,7 @@ bool bLedE = 0;
 bool policeCar = 0;
 bool bounceA = 0;
 bool bounceB = 0;
+bool risingLevel = 0;
 
 struct CRGB leds[NUM_LEDS];                                   // Initialize our LED array.
 CRGBPalette16 gPal;
@@ -119,7 +140,10 @@ CRGBPalette16 gPal;
 byte pulseA = 0;
 
 typedef void (*SimplePatternList[])();                        // List of patterns to cycle through.  Each is defined as a separate function below.
-SimplePatternList gPatterns = {fadeall, snakey, colorbands, bouncingball, flashusa, flashfade, confetti, blipouts, rainbow, rainbowWithGlitter, bpm, white, cylon, landinglight, fireball, pulse, racer, juggle, bandcracker, bandcracker2, police, burstfade, dropsslide, Fire2012WithPalette };
+SimplePatternList gPatterns = {fadeall, snakey, colorbands, bouncingball, flashusa,
+  flashfade, confetti, blipouts, rainbow, rainbowWithGlitter, bpm, white, cylon,
+  landinglight, fireball, pulse, racer, juggle, bandcracker, bandcracker2, police,
+  burstfade, dropsslide, Fire2012WithPalette, risingwater, fallingwater };
 
 long amap(long x, long in_min, long in_max, long out_min, long out_max)
 {
@@ -1316,22 +1340,23 @@ void dropsslide(void) {
   }
 }
 
-void Fire2012WithPalette() {
-// COOLING: How much does the air cool as it rises?
-// Less cooling = taller flames.  More cooling = shorter flames.
-// Default 55, suggested range 20-100
-#define COOLING  55
+void Fire2012WithPalette(void) {
+  // COOLING: How much does the air cool as it rises?
+  // Less cooling = taller flames.  More cooling = shorter flames.
+  // Default 55, suggested range 20-100
+  #define COOLING  65
 
-// SPARKING: What chance (out of 255) is there that a new spark will be lit?
-// Higher chance = more roaring fire.  Lower chance = more flickery fire.
-// Default 120, suggested range 50-200.
-#define SPARKING 120
+  // SPARKING: What chance (out of 255) is there that a new spark will be lit?
+  // Higher chance = more roaring fire.  Lower chance = more flickery fire.
+  // Default 120, suggested range 50-200.
+  #define SPARKING 110
 
   // Array of temperature readings at each simulation cell
   static byte heat[NUM_LEDS/2];
+  static byte heatB[NUM_LEDS/2];
 
-  black();
-  EVERY_N_MILLISECONDS(speed) {
+  if (timerA < (millis()-(50-(speed/2)))) {  //reversing the speed slider here, undo if you change the slider.
+    black();
     // Step 1.  Cool down every cell a little
     for( int i = 0; i < NUM_LEDS; i++) {
       heat[i] = qsub8( heat[i],  random8(0, ((COOLING * 10) / (NUM_LEDS/2)) + 2));
@@ -1355,5 +1380,112 @@ void Fire2012WithPalette() {
       byte colorindex = scale8( heat[j], 240);
       leds[j] = ColorFromPalette( gPal, colorindex);
     }
+    //time to do the other side
+
+    // Step 1.  Cool down every cell a little
+    for( int i = 0; i < (NUM_LEDS/2); i++) {
+     heatB[i] = qsub8( heatB[i],  random8(0, ((COOLING * 10) /
+    (NUM_LEDS/2)) + 2));
+    }
+
+    // Step 2.  Heat from each cell drifts 'up' and diffuses a little
+    //for( int k= (NUM_LEDS/2) - 3; k > 0; k--) {
+    for( int k= (NUM_LEDS/2) - 3; k > 0; k--) {
+     heatB[k] = (heatB[k - 1] + heatB[k - 2] + heatB[k - 2] ) / 3;
+    }
+
+    // Step 3.  Randomly ignite new 'sparks' of heat near the bottom
+    if( random8() < SPARKING ) {
+     int y = random8(7);
+     heatB[y] = qadd8( heatB[y], random8(160,255) );
+    }
+
+    // Step 4.  Map from heat cells to LED colors
+    int k=0;
+    for( int j = (NUM_LEDS-1); j > (NUM_LEDS/2); j--) {  //why doesn't this reverse it?  maybe I know, but it's annoying.
+    //for( int j = (NUM_LEDS/2); j < (NUM_LEDS-1); j++) {
+      // Scale the heat value from 0-255 down to 0-240
+      // for best results with color palettes.
+      byte colorindex = scale8( heatB[k], 240);
+      k++;
+      leds[j] = ColorFromPalette( gPal, colorindex);
+    }
+
+    timerA = millis();
+  }
+}
+
+void risingwater(void) {
+  // rising water level (for lack of better name)
+
+  if( timerA < (millis() - (speed/4))) {
+    if( locationA >= (NUM_LEDS/2) ) {
+      locationA = 0;
+      bBounce = !bBounce;
+    } else {
+      locationA++;
+    }
+
+    if( bBounce ) {
+      black();
+      for( int i=0; i <= locationA; i++ ) {
+        leds[i] = CRGB( gamma8[colorR], gamma8[colorG], gamma8[colorB] );
+        if( i >= (NUM_LEDS/2) ) {
+          leds[NUM_LEDS] = CRGB( gamma8[colorR], gamma8[colorG], gamma8[colorB] );
+        } else {
+          leds[NUM_LEDS-i] = CRGB( gamma8[colorR], gamma8[colorG], gamma8[colorB] );
+        }
+      }
+    } else {
+      black();
+      for( int i=locationA; i <= (NUM_LEDS/2); i++ ) {
+        leds[i] = CRGB( gamma8[colorR], gamma8[colorG], gamma8[colorB] );
+        if( i >= (NUM_LEDS/2) ) {
+          leds[NUM_LEDS] = CRGB( gamma8[colorR], gamma8[colorG], gamma8[colorB] );
+        } else {
+          leds[NUM_LEDS-i] = CRGB( gamma8[colorR], gamma8[colorG], gamma8[colorB] );
+        }
+      }
+    }
+
+    timerA = millis();
+  }
+}
+
+void fallingwater(void) {
+
+  // opposite of rising water level (for lack of better name)
+
+  if( timerA < (millis() - (speed/4))) {
+    if( locationA > 0 ) {
+      locationA--;
+    } else {
+      locationA = (NUM_LEDS/2);
+      bBounce = !bBounce;
+    }
+
+    if( bBounce ) {
+      black();
+      for( int i=NUM_LEDS/2; i >= locationA; i-- ) {
+        leds[i] = CRGB( gamma8[colorR], gamma8[colorG], gamma8[colorB] );
+        if( i >= (NUM_LEDS/2) ) {
+          leds[NUM_LEDS] = CRGB( gamma8[colorR], gamma8[colorG], gamma8[colorB] );
+        } else {
+          leds[NUM_LEDS-i] = CRGB( gamma8[colorR], gamma8[colorG], gamma8[colorB] );
+        }
+      }
+    } else {
+      black();
+      for( int i=locationA; i >= 0; i-- ) {
+        leds[i] = CRGB( gamma8[colorR], gamma8[colorG], gamma8[colorB] );
+        if( i >= (NUM_LEDS/2) ) {
+          leds[NUM_LEDS] = CRGB( gamma8[colorR], gamma8[colorG], gamma8[colorB] );
+        } else {
+          leds[NUM_LEDS-i] = CRGB( gamma8[colorR], gamma8[colorG], gamma8[colorB] );
+        }
+      }
+    }
+
+    timerA = millis();
   }
 }
