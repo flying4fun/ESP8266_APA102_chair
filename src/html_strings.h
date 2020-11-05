@@ -63,6 +63,7 @@ const char tab_manual[] PROGMEM = "\
            <option value=\"20\">Police</option>\
            <option value=\"21\">Burst Fade</option>\
            <option value=\"22\">Drops Slide</option>\
+           <option value=\"23\">Fire</option>\
          </select>\
        </div>\
      </div>\
