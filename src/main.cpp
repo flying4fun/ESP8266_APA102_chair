@@ -242,7 +242,7 @@ void setup() {
     request->send_P( 200, "text/html", tab_manual );
   });
 
-  webServer.on("/power", HTTP_POST, [](AsyncWebServerRequest *request) {
+  webServer.on("/power", HTTP_POST|HTTP_GET, [](AsyncWebServerRequest *request) {
     Serial.print("Set Power: ");
     Serial.print(request->argName(0));
     Serial.print(" = ");
@@ -260,7 +260,7 @@ void setup() {
     request->send_P( 200, "text/html", "" );
   });
 
-  webServer.on("/palette", HTTP_POST, [](AsyncWebServerRequest *request) {
+  webServer.on("/palette", HTTP_POST|HTTP_GET, [](AsyncWebServerRequest *request) {
     if(request->args() > 0) {
       Serial.print("Set Color: ");
       Serial.println(request->arg("value"));
@@ -278,7 +278,7 @@ void setup() {
     request->send_P( 200, "text/html", "" );
   });
 
-  webServer.on("/brightness", HTTP_POST, [](AsyncWebServerRequest *request) {
+  webServer.on("/brightness", HTTP_POST|HTTP_GET, [](AsyncWebServerRequest *request) {
     if(request->args() > 0) {
       //Serial.println(request->argName(0));
       Serial.print("Set Brightness: ");
@@ -292,7 +292,7 @@ void setup() {
     request->send_P( 200, "text/html", "" );
   });
 
-  webServer.on("/program", HTTP_POST, [](AsyncWebServerRequest *request) {
+  webServer.on("/program", HTTP_POST|HTTP_GET, [](AsyncWebServerRequest *request) {
     if(request->args() > 0) {
       Serial.print("Set Program: ");
       Serial.println(request->arg("value"));
@@ -313,7 +313,7 @@ void setup() {
     request->send_P( 200, "text/html", "" );
   });
 
-  webServer.on("/value", HTTP_POST, [](AsyncWebServerRequest *request) {
+  webServer.on("/value", HTTP_POST|HTTP_GET, [](AsyncWebServerRequest *request) {
     if(request->args() > 0) {
       Serial.print("Set Value: ");
       Serial.println(request->arg("value"));
