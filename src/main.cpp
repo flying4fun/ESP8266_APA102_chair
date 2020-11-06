@@ -46,6 +46,7 @@ void rainbowWithGlitter(void);
 void addGlitter(fract8 chanceOfGlitter);
 void bpm(void);
 void white(void);
+void colorpicker(void);
 void cylon(void);
 void landinglight(void);
 void fireball(void);
@@ -60,6 +61,9 @@ void dropsslide(void);
 void Fire2012WithPalette(void);
 void risingwater(void);
 void fallingwater(void);
+void tempPolice(void);
+void lightning(void);
+void black();
 void readbutton();
 
 MDNSResponder mdns;
@@ -104,6 +108,9 @@ uint8_t gBrt = 0;                                             // rotating "brigh
 uint8_t colorR = 0;
 uint8_t colorG = 0;
 uint8_t colorB = 0;
+uint8_t memoryA = 0;
+uint8_t memoryB = 0;
+uint8_t brightness = 128;
 
 int16_t movingled = 0;                                       // variables for moving up and down the LED chain
 int16_t movingledA = 0;
@@ -132,7 +139,7 @@ bool bLedE = 0;
 bool policeCar = 0;
 bool bounceA = 0;
 bool bounceB = 0;
-bool risingLevel = 0;
+bool tempPattern = 0;
 
 struct CRGB leds[NUM_LEDS];                                   // Initialize our LED array.
 CRGBPalette16 gPal;
@@ -141,9 +148,10 @@ byte pulseA = 0;
 
 typedef void (*SimplePatternList[])();                        // List of patterns to cycle through.  Each is defined as a separate function below.
 SimplePatternList gPatterns = {fadeall, snakey, colorbands, bouncingball, flashusa,
-  flashfade, confetti, blipouts, rainbow, rainbowWithGlitter, bpm, white, cylon,
-  landinglight, fireball, pulse, racer, juggle, bandcracker, bandcracker2, police,
-  burstfade, dropsslide, Fire2012WithPalette, risingwater, fallingwater };
+  flashfade, confetti, blipouts, rainbow, rainbowWithGlitter, bpm, white, colorpicker,
+  cylon, landinglight, fireball, pulse, racer, juggle, bandcracker, bandcracker2, police,
+  burstfade, dropsslide, Fire2012WithPalette, risingwater, fallingwater, tempPolice,
+  lightning };
 
 long amap(long x, long in_min, long in_max, long out_min, long out_max)
 {
@@ -243,6 +251,7 @@ void setup() {
       if(request->arg("value") == "0") {
         Serial.println("Power OFF");
         // fastled code to power off
+        black();
       } else {
         Serial.println("Power ON");
         // fastled code to power on
@@ -277,6 +286,7 @@ void setup() {
       Serial.print(" [");
       Serial.print(amap(request->arg("value").toInt(), 0, 100, 0, 255));
       Serial.println("]");
+      brightness = amap(request->arg("value").toInt(), 0, 100, 0, 255);
       FastLED.setBrightness(amap(request->arg("value").toInt(), 0, 100, 0, 255));
     }
     request->send_P( 200, "text/html", "" );
@@ -287,12 +297,13 @@ void setup() {
       Serial.print("Set Program: ");
       Serial.println(request->arg("value"));
 
+      memoryA = gCurrentPatternNumber;  //store the previous program for temporary programs
       gCurrentPatternNumber = request->arg("value").toInt();
     }
     request->send_P( 200, "text/html", "" );
   });
 
-  webServer.on("/speed", HTTP_POST, [](AsyncWebServerRequest *request) {
+  webServer.on("/speed", HTTP_POST|HTTP_GET, [](AsyncWebServerRequest *request) {
     if(request->args() > 0) {
       Serial.print("Set Speed: ");
       Serial.println(request->arg("value"));
@@ -453,6 +464,11 @@ void black() {
   }
 } // black()
 
+void colorpicker(void) {
+  for (int i = 0; i < NUM_LEDS; i++) {
+    leds[i] = CRGB(colorR, colorG, colorB);
+  }
+}
 
 void flashusa() {                                             //USA USA USA USA!
   black();
@@ -1156,39 +1172,38 @@ void police(void) {
   }
 }
 
-/*
+
 void lightning(void) {
   //Lightning
   if ( tempPattern == 0 ){ //initialization setup
-    strip.setBrightness(50);
+    FastLED.setBrightness(255);
     timerA = 0;
     memoryB = memoryA;  //pass the previous program memory out of the loop for future use.
     pulseA = 0;
     bounceA = 0;
     tempPattern = 1;  //lightning mode is temporarily active
   }
-  if ( pulseA < 6 ){
+  if ( pulseA < 6 ) {
     if ( timerA < (millis() - 60 )) {
       if ( bounceA ){
         black();
         bounceA = !bounceA;
       } else {
-        for(int k=0; k < (NUMPIXELS); k++) {
-          strip.setPixelColor(k, 255, 255, 255);
+        for(int k=0; k < (NUM_LEDS); k++) {
+          leds[k] = CRGB::White;
         }
         bounceA = !bounceA;
         pulseA++;
       }
       timerA = millis();
     }
-    strip.show();
   } else {
-    strip.setBrightness(brightness);
-    programMode = memoryB;
+    FastLED.setBrightness(brightness);
+    gCurrentPatternNumber = memoryB;
     tempPattern = 0;
   }
 }
-*/
+
 
 void burstfade(void) {
   // Burst Fade
@@ -1487,5 +1502,24 @@ void fallingwater(void) {
     }
 
     timerA = millis();
+  }
+}
+
+void tempPolice(void) {
+  // Police Temporary
+  if ( tempPattern == 0 ){ //initialization setup
+    FastLED.setBrightness(255);
+    //timerA = 0;
+    timerB = millis();
+    memoryB = memoryA;  //pass the previous program memory out of the loop for future use.
+    pulseA = 0;
+    bounceA = 0;
+    tempPattern = 1;  //mode is temporarily active
+  }
+  police();
+  if ( timerB < (millis() - 25000)) {
+    FastLED.setBrightness(brightness);
+    gCurrentPatternNumber = memoryB;
+    tempPattern = 0;
   }
 }

@@ -52,20 +52,23 @@ const char tab_manual[] PROGMEM = "\
            <option value=\"9\">Rainbow with Glitter</option>\
            <option value=\"10\">BPM</option>\
            <option value=\"11\">White</option>\
-           <option value=\"12\">Cylon</option>\
-           <option value=\"13\">Landing Light</option>\
-           <option value=\"14\">Fireball</option>\
-           <option value=\"15\">Pulse</option>\
-           <option value=\"16\">Racer</option>\
-           <option value=\"17\">Juggle</option>\
-           <option value=\"18\">Bandcracker</option>\
-           <option value=\"19\">Bandcracker 2</option>\
-           <option value=\"20\">Police</option>\
-           <option value=\"21\">Burst Fade</option>\
-           <option value=\"22\">Drops Slide</option>\
-           <option value=\"23\">Fire</option>\
-           <option value=\"24\">Rising Water</option>\
-           <option value=\"25\">Falling Water</option>\
+           <option value=\"12\">Color Picker</option>\
+           <option value=\"13\">Cylon</option>\
+           <option value=\"14\">Landing Light</option>\
+           <option value=\"15\">Fireball</option>\
+           <option value=\"16\">Pulse</option>\
+           <option value=\"17\">Racer</option>\
+           <option value=\"18\">Juggle</option>\
+           <option value=\"19\">Bandcracker</option>\
+           <option value=\"20\">Bandcracker 2</option>\
+           <option value=\"21\">Police</option>\
+           <option value=\"22\">Burst Fade</option>\
+           <option value=\"23\">Drops Slide</option>\
+           <option value=\"24\">Fire</option>\
+           <option value=\"25\">Rising Water</option>\
+           <option value=\"26\">Falling Water</option>\
+           <option value=\"27\">Temp Police</option>\
+           <option value=\"28\">Lightning</option>\
          </select>\
        </div>\
      </div>\
