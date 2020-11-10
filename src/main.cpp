@@ -111,6 +111,7 @@ uint8_t colorB = 0;
 uint8_t memoryA = 0;
 uint8_t memoryB = 0;
 uint8_t brightness = 128;
+uint8_t deviceValue = 128;
 
 int16_t movingled = 0;                                       // variables for moving up and down the LED chain
 int16_t movingledA = 0;
@@ -181,9 +182,12 @@ void setup() {
   //LEDS.addLeds<LED_TYPE, LED_DT, COLOR_ORDER>(leds, NUM_LEDS);  // Use this for WS2812
 
   FastLED.setBrightness(max_bright);
-  set_max_power_in_volts_and_milliamps(5, 5000);               // FastLED Power management set at 5V, 500mA.
+  set_max_power_in_volts_and_milliamps(5, 3000);               // FastLED Power management set at 5V, 500mA.
 
   gCurrentPatternNumber = EEPROM.read(eepaddress);
+  brightness = EEPROM.read(eepaddress+1);
+  deviceValue = EEPROM.read(eepaddress+2);
+  speed = EEPROM.read(eepaddress+3);
 
   if (gCurrentPatternNumber > maxMode) gCurrentPatternNumber = 0;   // A safety in case the EEPROM has an illegal value.
 
@@ -192,51 +196,6 @@ void setup() {
   Serial.println(gCurrentPatternNumber);
 
   //gCurrentPatternNumber = 16;
-
-
-  // Port defaults to 8266
-  // ArduinoOTA.setPort(8266);
-
-  // Hostname defaults to esp8266-[ChipID]
-  // ArduinoOTA.setHostname("myesp8266");
-
-  // No authentication by default
-  // ArduinoOTA.setPassword("admin");
-
-  // Password can be set with it's md5 value as well
-  // MD5(admin) = 21232f297a57a5a743894a0e4a801fc3
-  // ArduinoOTA.setPasswordHash("21232f297a57a5a743894a0e4a801fc3");
-  ArduinoOTA.setHostname("FastChair");
-  ArduinoOTA.onStart([]() {
-    String type;
-    if (ArduinoOTA.getCommand() == U_FLASH)
-      type = "sketch";
-    else // U_SPIFFS
-      type = "filesystem";
-
-    // NOTE: if updating SPIFFS this would be the place to unmount SPIFFS using SPIFFS.end()
-    Serial.println("Start updating " + type);
-  });
-  ArduinoOTA.onEnd([]() {
-    Serial.println("\nEnd");
-  });
-  ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
-    Serial.printf("  Progress: %u%%\r", (progress / (total / 100)));
-  });
-  ArduinoOTA.onError([](ota_error_t error) {
-    Serial.printf("Error[%u]: ", error);
-    if (error == OTA_AUTH_ERROR) Serial.println("Auth Failed");
-    else if (error == OTA_BEGIN_ERROR) Serial.println("Begin Failed");
-    else if (error == OTA_CONNECT_ERROR) Serial.println("Connect Failed");
-    else if (error == OTA_RECEIVE_ERROR) Serial.println("Receive Failed");
-    else if (error == OTA_END_ERROR) Serial.println("End Failed");
-  });
-  ArduinoOTA.begin();
-  Serial.println("Setup of OTA complete");
-  Serial.println("Ready");
-  Serial.print("IP address: ");
-  Serial.println(WiFi.localIP());
-
 
   webServer.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
     request->send_P( 200, "text/html", tab_manual );
@@ -317,6 +276,30 @@ void setup() {
     if(request->args() > 0) {
       Serial.print("Set Value: ");
       Serial.println(request->arg("value"));
+
+      deviceValue = request->arg("value").toInt();
+    }
+    request->send_P( 200, "text/html", "" );
+  });
+
+  webServer.on("/save", HTTP_POST|HTTP_GET, [](AsyncWebServerRequest *request) {
+    if(request->args() > 0) {
+      Serial.print("Save Options: ");
+      Serial.println(request->arg("value"));
+      // save all settings to eeprom?
+      EEPROM.write(eepaddress, gCurrentPatternNumber);
+      Serial.print("Writing: ");
+      Serial.println(gCurrentPatternNumber);
+      EEPROM.write(eepaddress+1, brightness);
+      Serial.print("Writing: ");
+      Serial.println(brightness);
+      EEPROM.write(eepaddress+2, deviceValue);
+      Serial.print("Writing: ");
+      Serial.println(deviceValue);
+      EEPROM.write(eepaddress+3, speed);
+      Serial.print("Writing: ");
+      Serial.println(speed);
+
     }
     request->send_P( 200, "text/html", "" );
   });
@@ -331,6 +314,59 @@ void setup() {
   });
 
   webServer.begin();
+
+
+
+  // Port defaults to 8266
+  // ArduinoOTA.setPort(8266);
+
+  // Hostname defaults to esp8266-[ChipID]
+  // ArduinoOTA.setHostname("myesp8266");
+
+  // No authentication by default
+  // ArduinoOTA.setPassword("admin");
+
+  // Password can be set with it's md5 value as well
+  // MD5(admin) = 21232f297a57a5a743894a0e4a801fc3
+  // ArduinoOTA.setPasswordHash("21232f297a57a5a743894a0e4a801fc3");
+  ArduinoOTA.setHostname("FastChair");
+  ArduinoOTA.onStart([]() {
+    String type;
+    if (ArduinoOTA.getCommand() == U_FLASH)
+      type = "sketch";
+    else // U_SPIFFS
+      type = "filesystem";
+
+    // NOTE: if updating SPIFFS this would be the place to unmount SPIFFS using SPIFFS.end()
+    Serial.println("Start updating " + type);
+  });
+  ArduinoOTA.onEnd([]() {
+    Serial.println("\nEnd");
+  });
+  ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
+    Serial.printf("  Progress: %u%%\r", (progress / (total / 100)));
+  });
+  ArduinoOTA.onError([](ota_error_t error) {
+    Serial.printf("Error[%u]: ", error);
+    if (error == OTA_AUTH_ERROR) Serial.println("Auth Failed");
+    else if (error == OTA_BEGIN_ERROR) Serial.println("Begin Failed");
+    else if (error == OTA_CONNECT_ERROR) Serial.println("Connect Failed");
+    else if (error == OTA_RECEIVE_ERROR) Serial.println("Receive Failed");
+    else if (error == OTA_END_ERROR) Serial.println("End Failed");
+  });
+  ArduinoOTA.begin();
+  Serial.println("Setup of OTA complete");
+  Serial.println("Ready");
+  Serial.print("IP address: ");
+  Serial.println(WiFi.localIP());
+
+  if ( MDNS.begin ( "fastchair" ) ) {
+    Serial.println("mDNS responder started");
+  } else {
+    Serial.println("Failed setting up mDNS responder!");
+  }
+  MDNS.addService("http", "tcp", 80);
+
 }
 
 void loop() {
@@ -364,6 +400,15 @@ void readbutton() {                                           // Read the button
     EEPROM.write(eepaddress, gCurrentPatternNumber);
     Serial.print("Writing: ");
     Serial.println(gCurrentPatternNumber);
+    EEPROM.write(eepaddress+1, brightness);
+    Serial.print("Writing: ");
+    Serial.println(brightness);
+    EEPROM.write(eepaddress+2, deviceValue);
+    Serial.print("Writing: ");
+    Serial.println(deviceValue);
+    EEPROM.write(eepaddress+3, speed);
+    Serial.print("Writing: ");
+    Serial.println(speed);
   }
 
 } // readbutton()
@@ -474,11 +519,11 @@ void flashusa() {                                             //USA USA USA USA!
   black();
   uint16_t i = random16(NUM_LEDS);
   leds[i] = CRGB::White;
-  if (NUM_LEDS > 100) {
+  if (NUM_LEDS > 5) {
     uint16_t j = random16(NUM_LEDS);
     leds[j] = CRGB::Red;
   }
-  if (NUM_LEDS > 200) {
+  if (NUM_LEDS > 10) {
     uint16_t k = random16(NUM_LEDS);
     leds[k] = CRGB::Blue;
   }
@@ -495,90 +540,98 @@ void flashfade() {
 }
 
 void colorbands() {
-  if (bWipe == 1) {
-    //movingled = 0;
-    black();
-    bWipe = 0;
-    //bBounce = 0;
-  }
+  if (timerA < (millis()-(50-(speed/2)))) {
+    if (bWipe == 1) {
+      //movingled = 0;
+      black();
+      bWipe = 0;
+      //bBounce = 0;
+    }
 
-  if (bBounce == 0) {
-    leds[movingled] = CHSV(gHue, gSat, 255);
-    movingled++;
-    if (movingled == (NUM_LEDS - 1)) {
-      gHue = random8();
-      gSat = random8(160, 255);
-      bBounce = 1;
+    if (bBounce == 0) {
+      leds[movingled] = CHSV(gHue, gSat, 255);
+      movingled++;
+      if (movingled == (NUM_LEDS - 1)) {
+        gHue = random8();
+        gSat = random8(160, 255);
+        bBounce = 1;
+      }
     }
-  }
-  // Now go in the other direction.
-  //if ((movingled > 0) && (bBounce == 1)) {
-  else {
-    leds[movingled] = CHSV(gHue, gSat, 255);
-    movingled--;
-    if (movingled == 0) {
-      gHue = random8();
-      gSat = random8(160, 255);
-      bBounce = 0;
+    // Now go in the other direction.
+    //if ((movingled > 0) && (bBounce == 1)) {
+    else {
+      leds[movingled] = CHSV(gHue, gSat, 255);
+      movingled--;
+      if (movingled == 0) {
+        gHue = random8();
+        gSat = random8(160, 255);
+        bBounce = 0;
+      }
     }
+    timerA = millis();
   }
 } // colorbands()
 
 
 void bouncingball() {
-
-  if (bBounce == 0) {
-    fadeall();
-    leds[movingled] = CHSV(gHue, 255, 255);
-    if (movingled > 0) {
-      leds[movingled - 1] = CRGB::Black;
+  if (timerA < (millis()-(50-(speed/2)))) {
+    if (bBounce == 0) {
+      fadeall();
+      leds[movingled] = CHSV(gHue, 255, 255);
+      if (movingled > 0) {
+        leds[movingled - 1] = CRGB::Black;
+      }
+      movingled++;
+      if (movingled == (NUM_LEDS - 1)) {
+        gHue = random8();
+        //gSat = random8(160, 255);
+        bBounce = 1;
+      }
     }
-    movingled++;
-    if (movingled == (NUM_LEDS - 1)) {
-      gHue = random8();
-      //gSat = random8(160, 255);
-      bBounce = 1;
+    // Reverse
+    else {
+      fadeall();
+      leds[movingled] = CHSV(gHue, 255, 255);
+      if (movingled < (NUM_LEDS - 1)) {
+        leds[movingled + 1] = CRGB::Black;
+      }
+      movingled--;
+      if (movingled == 0) {
+        gHue = random8();
+        //gSat = random8(160, 255);
+        bBounce = 0;
+      }
     }
-  }
-  // Reverse
-  else {
-    fadeall();
-    leds[movingled] = CHSV(gHue, 255, 255);
-    if (movingled < (NUM_LEDS - 1)) {
-      leds[movingled + 1] = CRGB::Black;
-    }
-    movingled--;
-    if (movingled == 0) {
-      gHue = random8();
-      //gSat = random8(160, 255);
-      bBounce = 0;
-    }
+    timerA = millis();
   }
 } // bouncingball()
 
 
 void snakey() {
-  if (bWipe == 1) {                                             // wipe the display at pattern startup
-    black();
-    bWipe = 0;
-  }
+  if (timerA < (millis()-(50-(speed/2)))) {
+    if (bWipe == 1) {                                             // wipe the display at pattern startup
+      black();
+      bWipe = 0;
+    }
 
-  if (bBounce == 0) {
-    leds[movingled] = CHSV(gHue++, 255, 255);
-    movingled++;
-    if (movingled == (NUM_LEDS - 1)) {
-      bBounce = 1;
+    if (bBounce == 0) {
+      leds[movingled] = CHSV(gHue++, 255, 255);
+      movingled++;
+      if (movingled == (NUM_LEDS - 1)) {
+        bBounce = 1;
+      }
     }
-  }
-  // Reverse
-  else {
-    leds[movingled] = CHSV(gHue++, 255, 255);
-    movingled--;
-    if (movingled == 0) {
-      bBounce = 0;
+    // Reverse
+    else {
+      leds[movingled] = CHSV(gHue++, 255, 255);
+      movingled--;
+      if (movingled == 0) {
+        bBounce = 0;
+      }
     }
+    fadeall();
+    timerA = millis();
   }
-  fadeall();
 } // snakey()
 
 
@@ -598,7 +651,7 @@ void bpm() {                                                  // Colored stripes
 
 
 void blipouts() {
-  uint8_t blipWidth = NUM_LEDS/30;                              // larger number = smaller width blips
+  uint8_t blipWidth = NUM_LEDS/24;                              // larger number = smaller width blips
 
   if (bWipe == 1) {                                             // wipe the display
     black();
@@ -645,42 +698,45 @@ void fireball() {
   uint8_t i = 30;                      //chance of trailing sparkles 0-255
   int8_t j = 1;
 
-  fadesparkle();
+  if (timerA < (millis()-(50-(speed/2)))) {
+    fadesparkle();
 
-  if (bBounce == 0) {
-    leds[movingled] = CRGB::Orange;
-    //leds[movingled] = CHSV(gHue++, 255, 255);
-    if (movingled > 0) {
-      leds[movingled - 1].nscale8(80);
+    if (bBounce == 0) {
+      leds[movingled] = CRGB::Orange;
+      //leds[movingled] = CHSV(gHue++, 255, 255);
+      if (movingled > 0) {
+        leds[movingled - 1].nscale8(80);
+      }
+      //j+random8(5);
+      j=random8(5);
+      if ((random8() < i) && ((movingled - j) >= 0)) {
+        movingledB = (movingled - j);
+        leds[ movingledB ] = CRGB::Tan;
+      }
+      movingled++;
+      if (movingled == (NUM_LEDS-1)) {
+        bBounce = 1;
+      }
     }
-    //j+random8(5);
-    j=random8(5);
-    if ((random8() < i) && ((movingled - j) >= 0)) {
-      movingledB = (movingled - j);
-      leds[ movingledB ] = CRGB::Tan;
+    // Now go in the other direction.
+    else {
+      leds[movingled] = CRGB::Orange;
+      //leds[movingled] = CHSV(gHue++, 255, 255);
+      if (movingled < (NUM_LEDS - 1)) {
+        leds[movingled + 1].nscale8(80);
+      }
+      //j+random8(5);
+      j=random8(5);
+      if ((random8() < i) && ((movingled + j) < NUM_LEDS)) {
+        movingledB = (movingled + j);
+        leds[ movingledB ] = CRGB::Tan;
+      }
+      movingled--;
+      if (movingled == 0) {
+        bBounce = 0;
+      }
     }
-    movingled++;
-    if (movingled == (NUM_LEDS-1)) {
-      bBounce = 1;
-    }
-  }
-  // Now go in the other direction.
-  else {
-    leds[movingled] = CRGB::Orange;
-    //leds[movingled] = CHSV(gHue++, 255, 255);
-    if (movingled < (NUM_LEDS - 1)) {
-      leds[movingled + 1].nscale8(80);
-    }
-    //j+random8(5);
-    j=random8(5);
-    if ((random8() < i) && ((movingled + j) < NUM_LEDS)) {
-      movingledB = (movingled + j);
-      leds[ movingledB ] = CRGB::Tan;
-    }
-    movingled--;
-    if (movingled == 0) {
-      bBounce = 0;
-    }
+    timerA = millis();
   }
 } // fireball()
 
@@ -747,7 +803,7 @@ void cylon() {
     }
   }
   */
-  EVERY_N_MILLISECONDS(speed/2) {
+  if (timerA < (millis()-(50-(speed/2)))) {
 
     if( bounceA ) {
       locationA++;
@@ -788,6 +844,7 @@ void cylon() {
         leds[k] = CRGB(tR, tG, tB);
       }
     }
+    timerA = millis();
   }
 } // cylon
 
@@ -1067,39 +1124,41 @@ void racer(void) {
 
 
 void bandcracker() {
+  if (timerA < (millis()-(50-(speed/2)))) {
+    if (bWipe == 1) {                                             // wipe the display
+      black();
+      bWipe = 0;
+      gHue = 0;
+      movingledA = (NUM_LEDS/2);
+      movingledB = (NUM_LEDS/2);
+      bBounce = 0;
+    }
 
-  if (bWipe == 1) {                                             // wipe the display
-    black();
-    bWipe = 0;
-    gHue = 0;
-    movingledA = (NUM_LEDS/2);
-    movingledB = (NUM_LEDS/2);
-    bBounce = 0;
-  }
+    if (bBounce == 1) {
+      gHue += (random8(16, 48));
+      movingledA = (NUM_LEDS/2);
+      movingledB = (NUM_LEDS/2);
+      leds[movingledA] = CHSV(gHue, 255, 255);
+      bBounce = 0;
+    }
 
-  if (bBounce == 1) {
-    gHue += (random8(16, 48));
-    movingledA = (NUM_LEDS/2);
-    movingledB = (NUM_LEDS/2);
-    leds[movingledA] = CHSV(gHue, 255, 255);
-    bBounce = 0;
-  }
-
-  if (movingledA < (NUM_LEDS - 2)) {
-    movingledA++;
-    leds[movingledA] = CHSV(gHue, 255, 255);
-  } else {
-    bBounce = 1;
-  }
-  if (movingledB > 0) {
-    movingledB--;
-    leds[movingledB] = CHSV(gHue, 255, 255);
-  } else {
-    bBounce = 1;
-  }
-  for (int i = 0; i < NUM_LEDS; i++) {
-    leds[i].nscale8(random8(125, 250));
-    leds[i] += leds[i].nscale8(random8(105, 244));
+    if (movingledA < (NUM_LEDS - 2)) {
+      movingledA++;
+      leds[movingledA] = CHSV(gHue, 255, 255);
+    } else {
+      bBounce = 1;
+    }
+    if (movingledB > 0) {
+      movingledB--;
+      leds[movingledB] = CHSV(gHue, 255, 255);
+    } else {
+      bBounce = 1;
+    }
+    for (int i = 0; i < NUM_LEDS; i++) {
+      leds[i].nscale8(random8(125, 250));
+      leds[i] += leds[i].nscale8(random8(105, 244));
+    }
+    timerA = millis();
   }
 }
 
@@ -1210,7 +1269,7 @@ void burstfade(void) {
   EVERY_N_MILLISECONDS(10) {
     fadeToBlackBy(leds, NUM_LEDS, 10);
   }
-  EVERY_N_MILLISECONDS(2200) {
+  EVERY_N_MILLISECONDS(1300) {
     for(int k=0; k < NUM_LEDS; k++) {
       //strip.setPixelColor(k, gamma8[colorG], gamma8[colorR], gamma8[colorB]);
       leds[k] = CRGB(colorR, colorG, colorB);
@@ -1433,7 +1492,7 @@ void Fire2012WithPalette(void) {
 void risingwater(void) {
   // rising water level (for lack of better name)
 
-  if( timerA < (millis() - (speed/4))) {
+  if (timerA < (millis()-(50-(speed/2)))) {
     if( locationA >= (NUM_LEDS/2) ) {
       locationA = 0;
       bBounce = !bBounce;
@@ -1471,7 +1530,7 @@ void fallingwater(void) {
 
   // opposite of rising water level (for lack of better name)
 
-  if( timerA < (millis() - (speed/4))) {
+  if (timerA < (millis()-(50-(speed/2)))) {
     if( locationA > 0 ) {
       locationA--;
     } else {
@@ -1523,3 +1582,11 @@ void tempPolice(void) {
     tempPattern = 0;
   }
 }
+
+/*
+Notes and to do list:
+
+In readbutton, bwipe=1 is used.  Where do we add this for a mode change via web?  Also, some of the programs could benefit from this feature,
+especially the temporary ones.
+
+*/
